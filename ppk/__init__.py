@@ -9,10 +9,10 @@ __version__ = '0.1.0'
 
 
 def peek(args):
-    with open(args['file'], 'rb') as f:
+    with open(args.file, 'rb') as f:
         pf = pickle.load(f)
 
-    key = args['key']
+    key = args.key
     if isinstance(pf, dict) and key in pf:
         pprint(pf[key])
         return pf[key]
@@ -80,5 +80,5 @@ def main():
     if args.header or args.content:
         modify(args)
     else:
-        peek(vars(args))
+        peek(args)
 
