@@ -5,7 +5,8 @@ import os.path
 import contextlib
 from pprint import pprint
 
-__version__ = '0.1.0'
+
+__version__ = '0.1.2'
 
 
 def peek(args):
