@@ -83,3 +83,7 @@ def main():
     else:
         peek(args)
 
+if __name__ == '__main__':
+    main()
+
+
