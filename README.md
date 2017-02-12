@@ -1,2 +1,2 @@
 # ppk
-Pickle-Peeker: a smart pickle reader.
+Pickle-Peeker: a smart pickle reader and writer.

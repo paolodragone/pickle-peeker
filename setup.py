@@ -35,7 +35,7 @@ setup(
     license = 'MIT',
     author = 'Paolo Dragone',
     author_email = 'dragone.paolo@gmail.com',
-    description = 'A smart pickle reader.',
+    description = 'A smart pickle reader and writer.',
     #long_description = read('README.rst'),
     packages = find_packages(exclude=['*tests*']),
     # test_suite = '',
