@@ -28,7 +28,8 @@ def peek(args):
 
 def modify(args):
     if os.path.exists(args.file):
-        pf = pickle.load(f)
+        with open(args.file, 'rb') as f:
+            pf = pickle.load(f)
     else:
         pf = None
 
