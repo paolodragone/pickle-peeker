@@ -18,7 +18,7 @@ def peek(args):
         pprint(pf[key])
         return pf[key]
     if isinstance(pf, list):
-        with contextlib.suppressi(ValueError):
+        with contextlib.suppress(ValueError):
             key = int(key)
             pprint(pf[key])
             return pf[key]
