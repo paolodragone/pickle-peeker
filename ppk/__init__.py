@@ -2,7 +2,7 @@
 from . import _ppk
 from ._ppk import *
 
-__version__ = '0.1.2'
+__version__ = '0.1.3'
 
 
 def main():
