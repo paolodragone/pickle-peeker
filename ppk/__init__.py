@@ -1,60 +1,8 @@
 
-import ast
-import pickle
-import os.path
-import contextlib
-from pprint import pprint
-
+from . import _ppk
+from ._ppk import *
 
 __version__ = '0.1.2'
-
-
-def peek(args):
-    with open(args.file, 'rb') as f:
-        pf = pickle.load(f)
-
-    key = args.key
-    if isinstance(pf, dict) and key in pf:
-        pprint(pf[key])
-        return pf[key]
-    if isinstance(pf, list):
-        with contextlib.suppress(ValueError):
-            key = int(key)
-            pprint(pf[key])
-            return pf[key]
-    pprint(pf)
-    return pf
-
-
-def modify(args):
-    if os.path.exists(args.file):
-        with open(args.file, 'rb') as f:
-            pf = pickle.load(f)
-    else:
-        pf = None
-
-    if args.header:
-        header = ast.literal_eval(args.header)
-    elif pf and isinstance(pf, dict) and 'header' in pf:
-        header = pf['header']
-    else:
-        header = None
-
-    if args.content:
-        content = ast.literal_eval(args.content)
-    elif pf:
-        if isinstance(pf, dict) and 'content' in pf:
-            content = pf['content']
-        else:
-            content = pf
-    else:
-        content = None
-
-    pf = {'header': header, 'content': content}
-    with open(args.file, 'wb') as f:
-        pickle.dump(pf, f)
-
-    return pf
 
 
 def main():
@@ -73,16 +21,20 @@ def main():
                         help='the pickle file to peek')
     parser.add_argument('-k', '--key', type=str, default='header',
                         help='the content key to peek')
+    parser.add_argument('-K', '--keys', action='store_true',
+                        help='show the list of keys in the file')
     parser.add_argument('-H', '--header', type=str,
                         help='add or replace the header of the file')
     parser.add_argument('-C', '--content', type=str,
                         help='replace the content of the file')
     args = parser.parse_args()
 
-    if args.header or args.content:
-        modify(args)
+    if args.keys:
+        peek_keys(args.file)
+    elif args.header or args.content:
+        modify(args.file, args.header, args.content)
     else:
-        peek(args)
+        peek(args.file, args.key)
 
 if __name__ == '__main__':
     main()
