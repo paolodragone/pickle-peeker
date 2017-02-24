@@ -12,7 +12,9 @@ def _pprint(obj):
     if isinstance(obj, str):
         print(obj)
     elif isinstance(obj, dict):
-        print(' '.join([': '.join([k, pformat(v)]) for k, v in obj.items()]))
+        lk = max([len(k) for k in obj])
+        print('\n'.join([('{:<' + str(lk) + '} = {}').format(k, pformat(v))
+                         for k, v in sorted(obj.items())]))
     else:
         pprint(obj)
 
