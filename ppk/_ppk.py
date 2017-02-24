@@ -1,90 +1,91 @@
 
-import ast
+import dbm
 import pickle
+import shelve
 import os.path
-import contextlib
-from pprint import pprint
 
 
-def dict_view(d, sep=' '):
-    s = []
-    for item in d.items():
-        s.append(': '.join(item))
-    return sep.join(s)
+class Peeker(object):
+    def __init__(self, filename, content='shelf'):
+        self.filename = filename
+        self.content = content
+        self._exists = os.path.exists(filename)
+        self._is_shelf = content == 'shelf' or dbm.whichdb(filename) == 'dbm.gnu'
+        self.db = None
+        self._modified = False
 
-
-def peek_keys(fname):
-    with open(fname, 'rb') as f:
-        pf = pickle.load(f)
-
-    if isinstance(pf, dict):
-        keys = sorted(pf.keys())
-        print('\n'.join(keys))
-        return keys
-    else:
-        pprint(pf)
-        return pf
-
-
-def peek(fname, key='header'):
-    with open(fname, 'rb') as f:
-        pf = pickle.load(f)
-
-    if isinstance(pf, dict) and key in pf:
-        if isinstance(pf[key], str):
-            print(pf[key])
-        if isinstance(pf[key], dict):
-            dict_view(pf[key])
+    def open(self):
+        if not self._exists:
+            if self.content == 'shelf':
+                self.db = shelve.open(self.filename, flag='n')
+            elif self.content == 'dict':
+                self.db = {}
+            elif self.content == 'list':
+                self.db = []
+            else:
+                raise ValueError('content {} not supported'.format(self.content))
+        elif self._is_shelf:
+            self.db = shelve.open(self.filename)
         else:
-            pprint(pf[key])
-        return pf[key]
-    if isinstance(pf, list):
-        with contextlib.suppress(ValueError):
+            with open(self.filename, 'rb') as f:
+                self.db = pickle.load(f)
+
+    def close(self):
+        if self._is_shelf:
+            self.db.close()
+        elif self._modified:
+            with open(self.filename, 'wb') as f:
+                pickle.dump(self.db, f)
+
+    def __enter__(self):
+        self.open()
+        return self
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        self.close()
+
+    def peek(self, key):
+        if self._is_shelf or isinstance(self.db, dict):
+            return self.db[key]
+        if isinstance(self.db, list):
             key = int(key)
-            pprint(pf[key])
-            return pf[key]
-    pprint(pf)
-    return pf
+            return self.db[key]
+        raise ValueError('Not a shelf, dictionary, or list')
+
+    def peek_keys(self):
+        if self._is_shelf or isinstance(self.db, dict):
+            return sorted(self.db.keys())
+        elif isinstance(self.db, list):
+            return len(self.db)
+        raise ValueError('Not a shelf, dictionary, or list')
+
+    def update(self, key, value):
+        if self._is_shelf or isinstance(self.db, dict):
+            self.db[key] = value
+            self._modified = True
+            return key, value
+        elif isinstance(self.db, list):
+            key = int(key)
+            if key == -1:
+                self.db.append(value)
+            else:
+                self.db[key] = value
+            self._modified = True
+            return key, value
+        raise ValueError('Not a shelf, dictionary, or list')
 
 
-def dump(fname, header, content):
-    if content and isinstance(content, dict):
-        if 'header' in content:
-            raise ValueError("Content contains a 'header' item")
-        pf = {'header': header, **content}
-    else:
-        pf = {'header': header, 'content': content}
-    with open(fname, 'wb') as f:
-        pickle.dump(pf, f)
-    return pf
+def peek(filename, key='args'):
+    with Peeker(filename) as peeker:
+        return peeker.peek(key)
 
 
-def modify(fname, header=None, content=None):
-    if os.path.exists(fname):
-        with open(fname, 'rb') as f:
-            pf = pickle.load(f)
-    elif header and content:
-        dump(fname, header, content)
-    else:
-        raise ValueError('The file does not exist.')
+def peek_keys(filename):
+    with Peeker(filename) as peeker:
+        return peeker.peek_keys()
 
-    if header:
-        header = ast.literal_eval(header)
-    elif pf and isinstance(pf, dict) and 'header' in pf:
-        header = pf['header']
-    else:
-        header = None
 
-    if content:
-        content = ast.literal_eval(content)
-    elif pf:
-        if isinstance(pf, dict):
-            content = {k: v for k, v in pf.items() if k != 'header'}
-        else:
-            content = pf
-    else:
-        content = None
-
-    dump(fname, header, content)
-    return pf
+def update(filename, key, value, content='shelf'):
+    with Peeker(filename, content) as peeker:
+        return peeker.update(key, value)
 
